@@ -1,12 +1,13 @@
 'use strict';
 /*jshint expr: true*/
 
-var expect    = require('chai').expect;
-var parseArgv = require('../../../lib/cli/parse-argv');
-var UI        = require('../../../lib/ui');
-var through   = require('through');
+var expect       = require('chai').expect;
+var parseCLIArgs = require('../../../lib/cli/parse-cli-args');
+var UI           = require('../../../lib/ui');
+var through      = require('through');
+var assign       = require('lodash-node/modern/objects/assign');
 
-describe('cli/parse-argv.js', function() {
+describe('cli/parse-cli-args.js', function() {
   var output = [];
 
   var environment = {
@@ -61,61 +62,57 @@ describe('cli/parse-argv.js', function() {
     }
   };
 
-  var parse = parseArgv.bind(null, environment);
+  var parse = function(e) { return parseCLIArgs(assign({}, environment, e)); };
 
-  it('parseArgv() should find commands by name and aliases.', function() {
+  it('parseCLIArgs() should find commands by name and aliases.', function() {
     output = [];
 
     // Valid commands
-    expect(parse(['ember', 'serve'])).to.exist;
-    expect(parse(['ember', 's'])).to.exist;
+
+    expect(parse({ cliArgs: ['serve'] })).to.exist;
+    expect(parse({ cliArgs: ['s'] })).to.exist;
 
     // Invalid command
-    expect(parse(['ember', 'something-else'])).to.be.null;
+    expect(parse({ cliArgs: ['something-else'] })).to.be.null;
     expect(output.shift()).to.match(/command.*something-else.*is invalid/);
   });
 
-  it('parseArgv() should find the command options.', function() {
-    expect(parse(['ember', 's', '--port', '80']).commandOptions).to.include({
+  it('parseCLIArgs() should find the command options.', function() {
+    expect(parse({ cliArgs: ['s', '--port', '80'] }).commandOptions).to.include({
       port: 80
     });
   });
 
-  it('parseArgv() should find abbreviated command options.', function() {
-    expect(parse(['ember', 's', '-p', '80']).commandOptions).to.include({
+  it('parseCLIArgs() should find abbreviated command options.', function() {
+    expect(parse({ cliArgs: ['s', 's', '-p', '80'] }).commandOptions).to.include({
       port: 80
     });
   });
 
-  it('parseArgv() should set default option values.', function() {
-    expect(parse(['ember', 's']).commandOptions).to.include({
+  it('parseCLIArgs() should set default option values.', function() {
+    expect(parse({ cliArgs: ['s']}).commandOptions).to.include({
       port: 4200
     });
   });
 
-  it('parseArgv() should print a message if a required option is missing.', function() {
-    expect(parse(['ember', 'develop-ember-cli'])).to.be.null;
+  it('parseCLIArgs() should print a message if a required option is missing.', function() {
+    expect(parse({ cliArgs: ['develop-ember-cli']})).to.be.null;
     expect(output.shift()).to.match(/requires the option.*package-name/);
   });
 
-  it('parseArgv() should print a message if a task cannot need the presence/absence of a project.', function() {
+  it('parseCLIArgs() should print a message if a task cannot need the presence/absence of a project.', function() {
     output = [];
 
     // Inside project
-    expect(parse(['ember', 'inside-project'])).to.exist;
-    expect(parse(['ember', 'outside-project'])).to.be.null;
+    expect(parse({ cliArgs: ['inside-project']})).to.exist;
+    expect(parse({ cliArgs: ['outside-project']})).to.be.null;
     expect(output.shift()).to.match(/You cannot use.*inside an ember-cli project/);
-    expect(parse(['ember', 'everywhere'])).to.exist;
+    expect(parse({ cliArgs: ['everywhere']})).to.exist;
 
     // Outside project
-    var project = environment.project;
-    environment.project = null;
-
-    expect(parse(['ember', 'inside-project'])).to.null;
+    expect(parse({ cliArgs: ['inside-project'], project: null })).to.null;
     expect(output.shift()).to.match(/You have to be inside an ember-cli project/);
-    expect(parse(['ember', 'outside-project'])).to.be.exist;
-    expect(parse(['ember', 'everywhere'])).to.exist;
-
-    environment.project = project;
+    expect(parse({ cliArgs: ['outside-project'], project: null })).to.be.exist;
+    expect(parse({ cliArgs: ['everywhere'], project: null })).to.exist;
   });
 });

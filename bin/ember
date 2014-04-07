@@ -15,7 +15,7 @@ if (installedViaNPM) {
 }
 
 require('../lib/cli')({
-  argv: process.argv.slice(1),
+  cliArgs: process.argv.slice(3),
   inputStream: process.stdin,
   outputStream: process.stdout
 });

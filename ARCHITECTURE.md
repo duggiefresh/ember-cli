@@ -13,9 +13,9 @@ Usage:
 var cli = require('cli');
 
 cli({
-    argv: argv, // Optional, default is process.argv
-    inputStream: inputStream, // Optional, default is process.stdin
-    outputStream: outputStream // Optional, default is process.stdout
+    cliArgs: argv, // Required
+    inputStream: inputStream, // Required
+    outputStream: outputStream // Required
   })
   .then(...);
 ```
